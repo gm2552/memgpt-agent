@@ -1,0 +1,3 @@
+rootProject.name = 'memgpt-agent'
+
+include 'core-agent', 'restful-agent-app', 'simple-chat-bot-app'

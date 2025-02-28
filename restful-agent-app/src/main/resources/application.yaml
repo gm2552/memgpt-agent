@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: restful-agent-app
+
+
+spring.ai.azure.openai.api-key: <redacted>
+spring.ai.azure.openai.endpoint: <redacted>
+spring.ai.azure.openai.chat.options.model: gpt-4o-mini
