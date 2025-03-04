@@ -20,6 +20,7 @@ import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.function.FunctionCallback;
+import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.openai.OpenAiChatOptions;
@@ -165,13 +166,7 @@ public class MemGPTAgent implements Agent {
         // specific to the chat model.  Maybe this should be done with
         // autoconfiguration properties since each ChatModel has its own set
         // of configuration.
-        OpenAiChatOptions options = OpenAiChatOptions.builder()
-                .toolChoice("required")
-                .parallelToolCalls(false)
-                .topP(1.0)
-                .frequencyPenalty(0.0)
-                .presencePenalty(0.0)
-                .N(1)
+        ToolCallingChatOptions options = ToolCallingChatOptions.builder()
                 .internalToolExecutionEnabled(false).temperature(0.8).toolCallbacks(getFunctionCallbacks()).build();
 
 

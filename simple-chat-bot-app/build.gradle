@@ -25,7 +25,6 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
 	implementation 'org.springframework.ai:spring-ai-mcp-client-spring-boot-starter'
-	implementation 'org.springframework.ai:spring-ai-azure-openai-spring-boot-starter'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

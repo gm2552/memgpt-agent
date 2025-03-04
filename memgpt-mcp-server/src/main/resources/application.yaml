@@ -7,7 +7,9 @@ spring:
   ai:
     openai:
       chat:
-        enabled: false  # enable if using OpenAI as the model provider
+        enabled: true  # enable if using OpenAI as the model provider
+        options:
+          model: gpt-4o-mini
       embedding:
         enabled: false # enable if using OpenAI as the model provider
       image:
@@ -17,11 +19,4 @@ spring:
           enabled: false
         speech:
           enabled: false
-
-      moderation:
-        api-key: bogus # Bug submitted so this can be set to "enabled: false"
-                        # https://github.com/spring-projects/spring-ai/issues/2373
-
-spring.ai.azure.openai.api-key: <redacted>
-spring.ai.azure.openai.endpoint: <redacted>
-spring.ai.azure.openai.chat.options.model: gpt-4o-mini
+      api-key: <redacted>
