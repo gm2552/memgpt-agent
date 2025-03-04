@@ -5,6 +5,8 @@ import com.example.memgptagent.service.Agent;
 import com.example.memgptagent.service.AgentManager;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
@@ -12,6 +14,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.function.Function;
 
 public class CoreMemoryReplace implements Function<CoreMemoryReplace.MemoryReplaceRequest, ToolResponse> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CoreMemoryReplace.class);
 
     private final Agent agent;
 
@@ -24,6 +28,9 @@ public class CoreMemoryReplace implements Function<CoreMemoryReplace.MemoryRepla
 
     @Override
     public ToolResponse apply(MemoryReplaceRequest memoryReplaceRequest) {
+
+        LOGGER.debug("Core memory replace initiated for agent {} for label {}", agent.getName(), memoryReplaceRequest.label());
+
         return agentManager.getAgentStateById(agent.getId()).map(state -> {
 
             Block block = state.memory().blocks().get(memoryReplaceRequest.label);

@@ -8,13 +8,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.metadata.DefaultUsage;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -40,6 +41,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class MemGPTAgent implements Agent {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MemGPTAgent.class);
 
     private static final float DEFAULT_MEMORY_THRESHOLD = .75f;
 
@@ -71,6 +74,10 @@ public class MemGPTAgent implements Agent {
         return agentState.id();
     }
 
+    @Override
+    public String getName() {
+        return agentState.name();
+    }
 
     @Override
     public void refreshState() {
@@ -88,6 +95,9 @@ public class MemGPTAgent implements Agent {
     @Override
     public OpenAiApi.ChatCompletion chat(OpenAiApi.ChatCompletionRequest chatRequest) {
         try {
+
+            LOGGER.info("Chat request invoked for agent {}", agentState.name());
+
             return doInner(chatRequest);
         }
         catch (Exception e) {
@@ -103,6 +113,9 @@ public class MemGPTAgent implements Agent {
 
 
 
+    /*
+     * not currently implemented
+     */
     @Override
     public Flux<OpenAiApi.ChatCompletionChunk> streamChat(OpenAiApi.ChatCompletionRequest chatRequest) {
         return null;
@@ -129,6 +142,8 @@ public class MemGPTAgent implements Agent {
         // now refresh my state
         refreshState();
 
+        LOGGER.info("Successfully completed chat transaction.  Current context size for agent {}: {}", agentState.name(), usage.promptTokens());
+
         if (usage.promptTokens() >  memoryThreshold * agentState.contextWindowSize())
             summarizeMessages();
 
@@ -146,6 +161,10 @@ public class MemGPTAgent implements Agent {
         int completionTokens = 0;
         int totalTokens = 0;
 
+        // TODO: Might need a better way to do this so we can have options
+        // specific to the chat model.  Maybe this should be done with
+        // autoconfiguration properties since each ChatModel has its own set
+        // of configuration.
         OpenAiChatOptions options = OpenAiChatOptions.builder()
                 .toolChoice("required")
                 .parallelToolCalls(false)
@@ -161,12 +180,13 @@ public class MemGPTAgent implements Agent {
         ToolCallingManager toolCallingManager = ToolCallingManager.builder().build();
 
         // everything is done via tools, so loop until we hit a tool that terminates the loop
+        // or kick out if we get a normal response message
         boolean runLoop = true;
         while (runLoop) {
 
             boolean heartbeat = false;
 
-            ChatResponse chatResp = chatResp = chatClient.prompt(prompt).call().chatResponse();
+            ChatResponse chatResp = chatClient.prompt(prompt).call().chatResponse();
 
             Usage usg = chatResp.getMetadata().getUsage();
             promptTokens = usg.getPromptTokens();
@@ -208,8 +228,13 @@ public class MemGPTAgent implements Agent {
                     }
                 }
             }
-            else // not allowed
-                continue;
+            else // kick out
+            {
+                LOGGER.warn("LLM returned a non tool response for agent {}.  Setting last message to returned response.", agentState.name());
+                this.setFinalUserMessage(chatResp.getResult().getOutput().getText());
+                runLoop = false;
+            }
+
 
             if (runLoop) {
                 contextMessages = new ArrayList<>(toolExecutionResult.conversationHistory());
@@ -367,6 +392,8 @@ public class MemGPTAgent implements Agent {
     }
 
     private void summarizeMessages() {
+
+        LOGGER.info("Agent {} hit memory threshold.  Summarizing messages.", agentState.name());
 
         // load messages in context
         List<Message> contextMessages = agentManager.getMessagesByIds(agentState.messageIds());

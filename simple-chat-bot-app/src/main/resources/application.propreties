@@ -1,3 +1,0 @@
-spring.application.name=trivial-chat-bot
-
-spring.main.log-startup-info=false

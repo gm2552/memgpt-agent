@@ -1,0 +1,27 @@
+server.port: 3001
+
+spring:
+  application:
+    name: restful-agent-app
+
+  ai:
+    openai:
+      chat:
+        enabled: false  # enable if using OpenAI as the model provider
+      embedding:
+        enabled: false # enable if using OpenAI as the model provider
+      image:
+        enabled: false
+      audio:
+        transcription:
+          enabled: false
+        speech:
+          enabled: false
+
+      moderation:
+        api-key: bogus # Bug submitted so this can be set to "enabled: false"
+                        # https://github.com/spring-projects/spring-ai/issues/2373
+
+spring.ai.azure.openai.api-key: <redacted>
+spring.ai.azure.openai.endpoint: <redacted>
+spring.ai.azure.openai.chat.options.model: gpt-4o-mini

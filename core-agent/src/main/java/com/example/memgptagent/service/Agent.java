@@ -9,6 +9,8 @@ public interface Agent {
 
     UUID getId();
 
+    String getName();
+
     void refreshState();
 
     void setFinalUserMessage(String string);

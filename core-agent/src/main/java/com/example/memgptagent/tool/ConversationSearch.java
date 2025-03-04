@@ -4,11 +4,15 @@ import com.example.memgptagent.service.Agent;
 import com.example.memgptagent.service.AgentManager;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.function.Function;
 
 public class ConversationSearch implements Function<ConversationSearch.ConversationSearchRequest, ToolResponse>  {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConversationSearch.class);
 
     private static final int RETRIEVAL_QUERY_DEFAULT_PAGE_SIZE = 5;
 
@@ -24,6 +28,8 @@ public class ConversationSearch implements Function<ConversationSearch.Conversat
     @Override
     public ToolResponse apply(ConversationSearchRequest conversationSearchRequest) {
 
+        LOGGER.debug("Conversation search request initiated for agent: {}", agent.getName());
+
         // get a count first
         int count = (int)agentManager.getMatchingUserMessagesCount(agent.getId(), conversationSearchRequest.query);
 
@@ -35,6 +41,7 @@ public class ConversationSearch implements Function<ConversationSearch.Conversat
                 .stream().map(msg -> msg.content()).toList();
 
         if (msgs.isEmpty()){
+            LOGGER.debug("Conversation search for agent {} found no messages", agent.getName());
             ToolResponse.contentOKStatus("No results found.");
         }
 
@@ -43,6 +50,9 @@ public class ConversationSearch implements Function<ConversationSearch.Conversat
         StringBuilder builder = new StringBuilder("Showing " ).append(msgs.size()).append(" of ").append(count).append(" results ");
         builder.append(" (page ").append(page).append(" of ").append(numPages).append("\n");
         builder.append(msgs.toString());
+
+        LOGGER.debug("Conversation search for agent {} found {} messages in page {} of {}", agent.getName(), msgs.size(),
+                page, numPages);
 
         return ToolResponse.contentOKStatus(builder.toString());
     }

@@ -5,6 +5,8 @@ import com.example.memgptagent.service.Agent;
 import com.example.memgptagent.service.AgentManager;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
@@ -12,6 +14,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.function.Function;
 
 public class CoreMemoryAppend implements Function<CoreMemoryAppend.MemoryAppendRequest, ToolResponse> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CoreMemoryAppend.class);
 
     private final Agent agent;
 
@@ -24,6 +28,8 @@ public class CoreMemoryAppend implements Function<CoreMemoryAppend.MemoryAppendR
 
     @Override
     public ToolResponse apply(MemoryAppendRequest memoryAppendRequest) {
+
+        LOGGER.debug("Core memory append initiated for agent {} for label {}", agent.getName(), memoryAppendRequest.label());
 
         return agentManager.getAgentStateById(agent.getId()).map(state -> {
 
