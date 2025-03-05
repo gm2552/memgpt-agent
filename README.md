@@ -4,7 +4,7 @@ This project is a proof of concept that implements a simplified and abridge impl
 [paper](https://research.memgpt.ai/).  It implements the concept as an agent and showcases how the it can
 be integrated either as a simple REST service or as an [MCP](https://www.anthropic.com/news/model-context-protocol) server.
 
-##Overview
+## Overview
 
 This project implements the MemGPT concept using Spring Boot and Spring AI and exposes its functionality as
 a REST service and an MCP Server.  In addition, it contains a simple ChatBot command line application that can
