@@ -11,10 +11,6 @@ public interface Agent {
 
     String getName();
 
-    void refreshState();
-
-    void setFinalUserMessage(String string);
-
     OpenAiApi.ChatCompletion chat(OpenAiApi.ChatCompletionRequest chatRequest);
 
     Flux<OpenAiApi.ChatCompletionChunk> streamChat(OpenAiApi.ChatCompletionRequest chatRequest);

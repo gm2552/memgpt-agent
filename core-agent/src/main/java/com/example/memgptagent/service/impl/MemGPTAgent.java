@@ -4,7 +4,7 @@ import com.example.memgptagent.model.AgentState;
 import com.example.memgptagent.model.Message;
 import com.example.memgptagent.service.Agent;
 import com.example.memgptagent.service.AgentManager;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.example.memgptagent.service.MutableAgent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,7 +23,6 @@ import org.springframework.ai.model.function.FunctionCallback;
 import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
-import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import reactor.core.publisher.Flux;
 
@@ -41,7 +40,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class MemGPTAgent implements Agent {
+public class MemGPTAgent implements MutableAgent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MemGPTAgent.class);
 
@@ -399,7 +398,7 @@ public class MemGPTAgent implements Agent {
         // create the assistant message
         AssistantMessage assMessage = new AssistantMessage(DefaultAgentContet.SUMMARY_ASSISTANT_ACK);
 
-        // create summary content and the the user message
+        // create summary content and the user message
         final StringBuilder builder = new StringBuilder();
         contextMessages.stream().forEach(msg -> builder.append("\n").append(msg.role()).append(": ").append(msg.content()));
 

@@ -3,6 +3,7 @@ package com.example.memgptagent.tool;
 import com.example.memgptagent.model.Block;
 import com.example.memgptagent.service.Agent;
 import com.example.memgptagent.service.AgentManager;
+import com.example.memgptagent.service.MutableAgent;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import org.slf4j.Logger;
@@ -17,11 +18,11 @@ public class CoreMemoryReplace implements Function<CoreMemoryReplace.MemoryRepla
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoreMemoryReplace.class);
 
-    private final Agent agent;
+    private final MutableAgent agent;
 
     private final AgentManager agentManager;
 
-    public CoreMemoryReplace(Agent agent, AgentManager agentManager) {
+    public CoreMemoryReplace(MutableAgent agent, AgentManager agentManager) {
         this.agentManager = agentManager;
         this.agent = agent;
     }

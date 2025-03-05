@@ -22,11 +22,7 @@ spring:
           enabled: false
         speech:
           enabled: false
-      api-key: <redacted>
-
-    mcp:
-      server:
-        enabled: false
+      api-key: ${OPENAI_API_KEY}
 
 ---
 spring:
