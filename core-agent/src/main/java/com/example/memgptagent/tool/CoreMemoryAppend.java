@@ -22,9 +22,9 @@ public class CoreMemoryAppend implements Function<CoreMemoryAppend.MemoryAppendR
 
     private final AgentManager agentManager;
 
-    public CoreMemoryAppend(MutableAgent agent, AgentManager agentManager) {
+    public CoreMemoryAppend(Agent agent, AgentManager agentManager) {
         this.agentManager = agentManager;
-        this.agent = agent;
+        this.agent = (MutableAgent)agent;
     }
 
     @Override

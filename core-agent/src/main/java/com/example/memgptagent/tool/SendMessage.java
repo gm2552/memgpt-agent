@@ -18,9 +18,9 @@ public class SendMessage implements Consumer<SendMessage.SendMessageRequest> {
 
     private final AgentManager agentManager;
 
-    public SendMessage(MutableAgent agent, AgentManager agentManager) {
+    public SendMessage(Agent agent, AgentManager agentManager) {
         this.agentManager = agentManager;
-        this.agent = agent;
+        this.agent = (MutableAgent)agent;
     }
 
     @Override

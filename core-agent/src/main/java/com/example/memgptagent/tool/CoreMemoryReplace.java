@@ -22,9 +22,9 @@ public class CoreMemoryReplace implements Function<CoreMemoryReplace.MemoryRepla
 
     private final AgentManager agentManager;
 
-    public CoreMemoryReplace(MutableAgent agent, AgentManager agentManager) {
+    public CoreMemoryReplace(Agent agent, AgentManager agentManager) {
         this.agentManager = agentManager;
-        this.agent = agent;
+        this.agent = (MutableAgent)agent;
     }
 
     @Override

@@ -70,13 +70,13 @@ export OPENAI_API_KEY=your-api-key
 2. Build the application 
 
 ```bash
-./gradlew clean :restful-agent-app:build
+./gradlew :restful-agent-app:build
 ```
 
 or
 
 ```bash
-./gradlew clean :memgpt-mcp-server:build
+./gradlew :memgpt-mcp-server:build
 ```
 
 3. Run the Server Application
@@ -119,7 +119,7 @@ depending on the targeted server application.
 3. Build the application 
 
 ```bash
-./gradlew clean :simple-chat-bot-app:build
+./gradlew :simple-chat-bot-app:build
 ```
 
 4. Run the ChatBot Application
