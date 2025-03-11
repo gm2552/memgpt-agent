@@ -144,7 +144,7 @@ public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
 
         @Override
         public void clear(String conversationId) {
-
+            // TODO implement clearing the memory context
         }
 
         public void setUserMessage(UserMessage userMessage) {
