@@ -1,6 +1,5 @@
 package com.java.example.chatbot;
 
-import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatusCode;
@@ -32,7 +31,7 @@ public class RestChatEngine implements ChatEngine {
         try {
             clientBuilder.build().post()
                     .uri("http://localhost:8080/agent")
-                    .bodyValue(new TrivialChatBotApplication.AgentCreateRequest(userId, 4026))
+                    .bodyValue(new AgentCreateRequest(userId, 4026))
                     .retrieve().bodyToMono(String.class).block();
             System.out.println("Welcome.  Let's start a conversation.  What is your name?");
 
@@ -60,4 +59,7 @@ public class RestChatEngine implements ChatEngine {
 
         return completion;
     }
+
+    public record AgentCreateRequest(String agentName, int contextWindowSize) {}
+
 }

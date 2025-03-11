@@ -6,11 +6,9 @@ import com.java.example.chatbot.advisors.MemGPTMessageChatMemoryAdvisor;
 import io.modelcontextprotocol.client.McpSyncClient;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.model.function.FunctionCallback;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import java.util.List;
-import java.util.function.Function;
 
 @Component
 @Profile("advisor")

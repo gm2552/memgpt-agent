@@ -26,17 +26,36 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A MemMPT custom memory advisor that delegates to a MemGPT MCP service.  This allows for a virtually
+ * infinite context window.  It encapsulates a custom ChatMemory implementation that handles the
+ * communication with the underlying MemGPT service.
+ * <br></>
+ * Context memory is identified by the conversation ID; i.e. a new conversation ID will result in a
+ * unique content memory.
+ * <br></>
+ * This advisor requires a previously created McpSyncClient that is configured to connect and
+ * communicate with the MemGPT MCP service.
+ *
+ */
 public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
 
-
     public MemGPTMessageChatMemoryAdvisor(McpSyncClient client, String conversationId) {
+        // Because MemGPT context windows are virtually and theoretically limitless,
+        // a max number of messages to store is somewhat moot.
+        // TODO: possibly control the number of previous messages that are returned
+        // from the MemGPT service.  As of now, the MemGPT service can hold as many messages
+        // as it's threshold limit allows, but this might be a different size than the model
+        // that the ChatClient is targeting.
         super(new MemGPTChatMemory(client), conversationId, Integer.MAX_VALUE);
-
     }
 
     @Override
     public AdvisedResponse aroundCall(AdvisedRequest advisedRequest, CallAroundAdvisorChain chain) {
 
+        // we need the user message so the recallContext tool can examine it and
+        // potentially perform operations such as modifying core memory or recalling
+        // older conversations
         UserMessage userMessage = new UserMessage(advisedRequest.userText(), advisedRequest.media());
 
         ((MemGPTChatMemory)chatMemoryStore).setUserMessage(userMessage);
@@ -44,6 +63,10 @@ public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
         return super.aroundCall(advisedRequest, chain);
     }
 
+    /*
+     * MemGPTChatMemory delegates to a MemGPT MCP service for recalling the relevant
+     * context window and appending responses to the context store.
+     */
     private static class MemGPTChatMemory implements ChatMemory {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(MemGPTChatMemory.class);
@@ -81,7 +104,7 @@ public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
                     LOGGER.warn("Error appending context.  Unknown error");
             }
             catch (Exception e) {
-                LOGGER.warn("Error appending context", e.getMessage());
+                LOGGER.warn("Error appending context: {}", e.getMessage());
             }
 
         }
@@ -89,6 +112,8 @@ public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
         @Override
         public List<Message> get(String conversationId, int lastN) {
 
+            // The user message is passes to update the context's core memory are to
+            // retrieve any other relevant information from "virtual" memory.
             var args = Map.of(AGENT_NAME_ARG, conversationId, PROMPT_MESSAGE_ARG, userMessage);
 
             McpSchema.CallToolRequest callToolRequest = new McpSchema.CallToolRequest(RECALL_TOOL_NAME, args);
@@ -103,7 +128,11 @@ public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
 
                     if (!result.content().isEmpty()) {
 
+                        // there should be one and only one content entry if there was not an error
                         String content = ((McpSchema.TextContent)result.content().getFirst()).text();
+
+                        // The returned content is a list of JSON objects.  Each object represents
+                        // an individual message which is in the form a Map<String, Object>
                         ObjectMapper objectMapper = new ObjectMapper();
                         List<Object> retObjects = objectMapper.readValue(content, new TypeReference<List<Object>>(){});
 
@@ -111,10 +140,13 @@ public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
 
                             Map<String, Object> map = (Map<String, Object>)ob;
 
-                            // find the message type
                             try {
+                                // find the message type
                                 MessageType type = MessageType.valueOf(map.get("messageType").toString());
 
+                                // SpringAI Message type cannot be directly deserialized (as of writing) with the
+                                // ObjectMapper.  The xxxWrapper classes facilitate the deserialization of each
+                                // message type.
                                 Class<? extends Message> messageClassType = switch(type) {
                                     case SYSTEM -> SystemWrapper.class;
                                     case TOOL -> ToolResponseWrapper.class;
@@ -122,6 +154,7 @@ public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
                                     case USER -> UserWrapper.class;
                                 };
 
+                                // deserialize the message
                                 return (Message)objectMapper.readValue(objectMapper.writeValueAsString(ob), messageClassType);
 
                             } catch (JsonProcessingException e) {
@@ -134,7 +167,7 @@ public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
 
             }
             catch (Exception e) {
-                LOGGER.warn("Error recalling context", e.getMessage());
+                LOGGER.warn("Error recalling context: {}", e.getMessage());
 
             }
 
@@ -152,6 +185,12 @@ public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
         }
 
     }
+
+    /////////////////////////////////////////
+    //
+    //
+    // Wrapper classes for message deserialization
+    //
 
     private static class ToolResponseWrapper extends ToolResponseMessage {
 

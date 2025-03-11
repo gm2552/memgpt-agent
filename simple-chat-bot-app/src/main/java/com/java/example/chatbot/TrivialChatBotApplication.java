@@ -1,7 +1,6 @@
 package com.java.example.chatbot;
 
 import java.util.Scanner;
-import org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -50,7 +49,5 @@ public class TrivialChatBotApplication {
             }
         };
     }
-
-    public record AgentCreateRequest(String agentName, int contextWindowSize) {}
 
 }
