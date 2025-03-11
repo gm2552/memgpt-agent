@@ -96,9 +96,13 @@ The server application will load and is ready for incoming transactions from the
 
 ### ChatBot Application
 
-The ChatBot application can communicate with either the REST application of the MCP server application; by default
-it will attempt to communicate with the REST Application.  Execute the following steps to configure and
-run the ChatBot application:
+The ChatBot application can communicate with either the REST application or the MCP server application; by default
+it will attempt to communicate with the REST Application.  When executing against an MCP server, the ChatBot can either
+communicate directly with the MCP server manage the context window and create chat completions, 
+or it an use a custom Spring AI Advisor to only manage the context window memory and handle creating chat completions
+itself.  
+
+Execute the following steps to configure and run the ChatBot application:
 
 
 1. Set the OpenAPI Key environment variable
@@ -112,8 +116,9 @@ export OPENAI_API_KEY=your-api-key
 Edit the `simple-chat-bot-app\src\main\resource\application.yaml` file and update the `spring.profiles.active` setting with the following value
 depending on the targeted server application.
 
-- rest
-- mcp
+- **rest:** Generates chat completions over a REST API with the MemGPT server.
+- **mcp:** Generates chat completions over an MCP API with the MemGPT server.
+- **advisor:** Generates chat completions by communicating directly with the LLM and using the MemGPT server to only manage memory over an MCP API.
 
 
 3. Build the application 
@@ -129,3 +134,4 @@ java -jar ./simple-chat-bot-app/build/libs/simple-chat-bot-app-0.0.1-SNAPSHOT.ja
 ```
 
 The application will first ask for a User ID which can be anything; it is mainly used as a unique identifier for the chat session.
+

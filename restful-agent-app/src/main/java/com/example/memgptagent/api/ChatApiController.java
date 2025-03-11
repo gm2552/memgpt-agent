@@ -3,6 +3,7 @@ package com.example.memgptagent.api;
 import com.example.memgptagent.service.Agent;
 import com.example.memgptagent.service.AgentLoader;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,14 +25,14 @@ public class ChatApiController {
     }
 
     @PostMapping(value="chat/{agentName}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<OpenAiApi.ChatCompletion> chat(@PathVariable("agentName")String  agentName, @RequestBody OpenAiApi.ChatCompletionRequest chatRequest) {
+    public ResponseEntity<String> chat(@PathVariable("agentName")String  agentName, @RequestBody OpenAiApi.ChatCompletionRequest chatRequest) {
 
         Agent agent = agentLoader.loadAgentByName(agentName, chatClientBuilder.build()).get();
 
         if (agent == null)
             return ResponseEntity.notFound().build();
 
-        return ResponseEntity.ok(agent.chat(chatRequest));
+        return ResponseEntity.ok(agent.chat(chatRequest).getText());
 
     }
 }

@@ -1,5 +1,6 @@
 package com.java.example.chatbot;
 
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatusCode;
@@ -10,7 +11,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import java.util.List;
 
 @Component
-@Profile("!mcp")
+@Profile("rest")
 public class RestChatEngine implements ChatEngine {
 
     private final WebClient.Builder clientBuilder;
@@ -55,8 +56,8 @@ public class RestChatEngine implements ChatEngine {
 
         OpenAiApi.ChatCompletionRequest req = new OpenAiApi.ChatCompletionRequest(List.of(msg), "", .5);
 
-        OpenAiApi.ChatCompletion completion = webClient.post().bodyValue(req).retrieve().bodyToMono(OpenAiApi.ChatCompletion.class).block();
+        String completion = webClient.post().bodyValue(req).retrieve().bodyToMono(String.class).block();
 
-        return completion.choices().get(0).message().content();
+        return completion;
     }
 }

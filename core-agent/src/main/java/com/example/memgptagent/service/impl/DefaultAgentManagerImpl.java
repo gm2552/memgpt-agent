@@ -96,7 +96,7 @@ public class DefaultAgentManagerImpl implements AgentManager {
 
         Agent newAgent = new Agent();
         newAgent.setAgentName(agentCreate.name());
-        newAgent.setSystemPrompt(StringUtils.hasText(agentCreate.systemPrompt()) ? agentCreate.systemPrompt() : DefaultAgentContet.DEFAULT_SYSTEM_PROMPT);
+        newAgent.setSystemPrompt(StringUtils.hasText(agentCreate.systemPrompt()) ? agentCreate.systemPrompt() : DefaultAgentContet.COMPLETION_SYSTEM_PROMPT);
         newAgent.setDescription(agentCreate.description());
         newAgent.setMetadataLabels(agentCreate.metadata() != null ? agentCreate.metadata() : Map.of());
         newAgent.setContextWindow(agentCreate.contextWindowSize());

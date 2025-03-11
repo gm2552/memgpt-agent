@@ -61,8 +61,13 @@ public class CoreToolBootstrapService implements ApplicationListener<ContextRefr
         convserationSearchTool.setFqInputClassName(ConversationSearch.ConversationSearchRequest.class.getName());
         convserationSearchTool.setDescription("Search prior conversation history using case-insensitive string matching.");
 
+        Tool retrievalDoneTool = new Tool();
+        retrievalDoneTool.setName("retrieval_done");
+        retrievalDoneTool.setFqClassName(RetrievalDone.class.getName());
+        retrievalDoneTool.setDescription("Indicates that message editing and retrieval is complete");
+
         toolRepository.saveAll(List.of(memAppendTool, sendMessageTool, archiveMemoryInsertTool, memoryReplaceTool,
-                archiveMemSearchTool, convserationSearchTool));
+                archiveMemSearchTool, convserationSearchTool, retrievalDoneTool));
 
     }
 

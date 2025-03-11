@@ -92,22 +92,67 @@ public class MemGPTAgent implements MutableAgent {
         this.finalUserMessage = finalMessage;
     }
 
+
     @Override
-    public OpenAiApi.ChatCompletion chat(OpenAiApi.ChatCompletionRequest chatRequest) {
+    public List<org.springframework.ai.chat.messages.Message> recallContext(UserMessage request) {
+
+        List<org.springframework.ai.chat.messages.Message> retMessages =
+                new ArrayList<>(doInner(request, InnerOperation.CONTEXT_RETRIEVAL));
+
+        // need to build a short system message with the core memory contents
+        retMessages.addFirst(buildContextRetrievalMemoryMessage());
+
+        return retMessages;
+    }
+
+    @Override
+    public void appendContext(List<org.springframework.ai.chat.messages.Message> messages) {
+
+        try {
+
+            var convertedMessages = toStorageMessage(messages);
+
+            agentManager.saveNewMessages(this.getId(), toStorageMessage(messages));
+
+            // TODO: Do we need to reevaluate the token size and this point
+            // and potentially run an evaluation (it will get run on the next appropriate
+            // context retrival if we don't run it now, but will the window size be too large)?
+
+            refreshState();
+        }
+        catch (Exception e) {
+
+            LOGGER.warn("Failed to append context: {}", e.getMessage());
+
+        }
+
+    }
+
+    @Override
+    public AssistantMessage chat(OpenAiApi.ChatCompletionRequest chatRequest) {
         try {
 
             LOGGER.info("Chat request invoked for agent {}", agentState.name());
 
-            return doInner(chatRequest);
+            List<org.springframework.ai.chat.messages.Message> messages =
+                    doInner(compileUserMessage(chatRequest), InnerOperation.COMPLETION);
+
+            // error
+            if (messages.isEmpty())
+                return new AssistantMessage("Chat Error: No chat response was created");
+
+            org.springframework.ai.chat.messages.Message message = messages.getLast();
+
+            if (message instanceof AssistantMessage)
+                return (AssistantMessage)message;
+
+            // error
+            return new AssistantMessage("Chat Error: No valid response message was created");
+
         }
         catch (Exception e) {
 
-            OpenAiApi.ChatCompletionMessage completionMessage =
-                    new OpenAiApi.ChatCompletionMessage("Chat Error: " + e.getMessage(), OpenAiApi.ChatCompletionMessage.Role.USER);
-            var choice = new OpenAiApi.ChatCompletion.Choice(OpenAiApi.ChatCompletionFinishReason.STOP,
-                    0,  completionMessage, null);
-            return new OpenAiApi.ChatCompletion(UUID.randomUUID().toString(), List.of(choice), System.currentTimeMillis(), chatRequest.model(),
-                    "", "", "", null);
+            return new AssistantMessage("Chat Error: " + e.getMessage());
         }
     }
 
@@ -121,23 +166,34 @@ public class MemGPTAgent implements MutableAgent {
         return null;
     }
 
-    private OpenAiApi.ChatCompletion  doInner(OpenAiApi.ChatCompletionRequest chatRequest) {
-
-        String model = chatRequest.model();
+    private List<org.springframework.ai.chat.messages.Message> doInner(UserMessage chatRequest,
+                                              InnerOperation operation) {
 
         // load messages in context
         List<org.springframework.ai.chat.messages.Message> contextMessages
                 = toSpringAIMessages(agentManager.getMessagesByIds(agentState.messageIds()));
 
-        // add the system message
-        contextMessages.addFirst(buildSystemMessage());
+        if (operation == InnerOperation.CONTEXT_RETRIEVAL) {
+            // just get the context messages
+            // we aren't trying to update memory
+            // with any information from the request
+            if (chatRequest == null)
+                return contextMessages;
+            // add the context retrieval system message
+            else
+                contextMessages.addFirst(buildContextRetrievalSystemMessage());
+        }
+        else
+            // add the completion system message
+            contextMessages.addFirst(buildCompletionSystemMessage());
 
-        UserMessage userMsg = compileUserMessage(chatRequest);
-        agentManager.saveNewMessages(this.getId(), toStorageMessage(List.of(userMsg)));
+        // don't update the messages with the user messages if it's not a completion... this should be done on an append operation
+        if (operation == InnerOperation.COMPLETION)
+            agentManager.saveNewMessages(this.getId(), toStorageMessage(List.of(chatRequest)));
 
-        contextMessages.add(compileUserMessage(chatRequest));
+        contextMessages.add(chatRequest);
 
-        OpenAiApi.Usage usage = runRequestLoop(contextMessages);
+        OpenAiApi.Usage usage = runRequestLoop(contextMessages, operation);
 
         // now refresh my state
         refreshState();
@@ -147,15 +203,24 @@ public class MemGPTAgent implements MutableAgent {
         if (usage.promptTokens() >  memoryThreshold * agentState.contextWindowSize())
             summarizeMessages();
 
-        OpenAiApi.ChatCompletionMessage completionMessage =
-                new OpenAiApi.ChatCompletionMessage(this.finalUserMessage, OpenAiApi.ChatCompletionMessage.Role.USER);
-        var choice = new OpenAiApi.ChatCompletion.Choice(OpenAiApi.ChatCompletionFinishReason.STOP,
-                0,  completionMessage, null);
-        return new OpenAiApi.ChatCompletion(UUID.randomUUID().toString(), List.of(choice), System.currentTimeMillis(), model,
-                "", "", "", usage);
+        if (operation == InnerOperation.COMPLETION)
+            // if this is a completion, then we just want to return the assistant message
+            return List.of(new AssistantMessage(finalUserMessage));
+        else if (operation == InnerOperation.CONTEXT_RETRIEVAL)
+            // context retrival just wants the currently saved messages
+            // but after we have potentially updated memory
+            // we'll save messages on an append operations
+            // state should be refreshed at this point, so we'll have all of the latest
+            // context information that may have been updated
+            return toSpringAIMessages(agentManager.getMessagesByIds(agentState.messageIds()));
+
+        // should not happen, but fall back return value
+        return List.of();
+
     }
 
-    private OpenAiApi.Usage runRequestLoop(List<org.springframework.ai.chat.messages.Message> contextMessages) {
+    private OpenAiApi.Usage runRequestLoop(List<org.springframework.ai.chat.messages.Message> contextMessages,
+                                           InnerOperation operation) {
 
         int promptTokens = 0;
         int completionTokens = 0;
@@ -187,7 +252,9 @@ public class MemGPTAgent implements MutableAgent {
             completionTokens = usg.getCompletionTokens();
             totalTokens = usg.getTotalTokens();
 
-            agentManager.saveNewMessages(this.getId(), toStorageMessage(List.of(chatResp.getResult().getOutput())));
+            // don't update the messages with the user messages if it's not a completion... this should be done on an append operation
+            if (operation == InnerOperation.COMPLETION)
+                agentManager.saveNewMessages(this.getId(), toStorageMessage(List.of(chatResp.getResult().getOutput())));
 
             ToolExecutionResult toolExecutionResult = null;
             if (chatResp.hasToolCalls()) {
@@ -205,7 +272,10 @@ public class MemGPTAgent implements MutableAgent {
                 toolExecutionResult = toolCallingManager.executeToolCalls(prompt, chatResp);
 
                 org.springframework.ai.chat.messages.Message lastMsg = toolExecutionResult.conversationHistory().getLast();
-                agentManager.saveNewMessages(this.getId(), toStorageMessage(List.of(lastMsg)));
+
+                // don't update the messages with the user messages if it's not a completion... this should be done on an append operation
+                if (operation == InnerOperation.COMPLETION)
+                    agentManager.saveNewMessages(this.getId(), toStorageMessage(List.of(lastMsg)));
 
                 if (lastMsg.getMessageType() == MessageType.TOOL){
                     ToolResponseMessage toolMessage = (ToolResponseMessage) lastMsg;
@@ -215,7 +285,7 @@ public class MemGPTAgent implements MutableAgent {
 
                         // TODO: use a configured list of tool names to kick out of the loop
                         // check if the tool kicks us out of the loop
-                        if (resp.name().equalsIgnoreCase("send_message")){
+                        if (resp.name().equalsIgnoreCase("send_message") || resp.name().equalsIgnoreCase("retrieval_done")){
                             runLoop = false;
                             break;
                         }
@@ -286,7 +356,7 @@ public class MemGPTAgent implements MutableAgent {
                 case TOOL -> toolMessageToStorageMessage((ToolResponseMessage)msg);
 
             };
-        }).collect(Collectors.toUnmodifiableList());
+        }).toList();
 
     }
 
@@ -345,13 +415,29 @@ public class MemGPTAgent implements MutableAgent {
 
     }
 
-    private SystemMessage buildSystemMessage() {
+    private SystemMessage buildCompletionSystemMessage() {
 
-        StringBuilder builder = new StringBuilder(DefaultAgentContet.DEFAULT_SYSTEM_PROMPT)
+        StringBuilder builder = new StringBuilder(DefaultAgentContet.COMPLETION_SYSTEM_PROMPT)
                 .append("\n").append(buildSystemMessageMemoryBlock());
 
         return new SystemMessage(builder.toString());
 
+    }
+
+    private SystemMessage buildContextRetrievalSystemMessage() {
+
+        StringBuilder builder = new StringBuilder(DefaultAgentContet.CONTEXT_RETRIEVAL_SYSTEM_PROMPT)
+                .append("\n").append(buildSystemMessageMemoryBlock());
+
+        return new SystemMessage(builder.toString());
+    }
+
+    private SystemMessage buildContextRetrievalMemoryMessage() {
+
+        StringBuilder builder = new StringBuilder(DefaultAgentContet.CONTEXT_RETRIEVAL_MEMORY_BLOCK_TEMPLATE)
+                .append("\n").append(buildSystemMessageMemoryBlock());
+
+        return new SystemMessage(builder.toString());
     }
 
     private String buildSystemMessageMemoryBlock() {
@@ -428,6 +514,14 @@ public class MemGPTAgent implements MutableAgent {
             reason = "[This is an automated system message hidden from the user] Function called using request_heartbeat=true, returning control";
             time = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(OffsetDateTime.now());
         }
+    }
+
+    private enum InnerOperation {
+
+        COMPLETION,
+
+        CONTEXT_RETRIEVAL
+
     }
 
 }

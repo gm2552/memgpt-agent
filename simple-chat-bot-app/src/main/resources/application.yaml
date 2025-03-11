@@ -38,7 +38,7 @@ spring:
 
 spring:
 
-  config.activate.on-profile: mcp
+  config.activate.on-profile: mcp, advisor
 
   ai:
     mcp:
