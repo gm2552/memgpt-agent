@@ -75,6 +75,8 @@ public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
 
         private static final String APPEND_TOOL_NAME = "appendContext";
 
+        private static final String CLEAR_TOOL_NAME = "clear";
+
         private static final String AGENT_NAME_ARG = "agentName";
 
         private static final String PROMPT_MESSAGE_ARG = "promptMessage";
@@ -177,7 +179,19 @@ public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
 
         @Override
         public void clear(String conversationId) {
-            // TODO implement clearing the memory context
+            var args = Map.of(AGENT_NAME_ARG, (Object)conversationId);
+
+            McpSchema.CallToolRequest callToolRequest = new McpSchema.CallToolRequest(CLEAR_TOOL_NAME, args);
+
+            try{
+                McpSchema.CallToolResult result = client.callTool(callToolRequest);
+
+                if (result.isError())
+                    LOGGER.warn("Error clearing context memory.  Unknown error");
+            }
+            catch (Exception e) {
+                LOGGER.warn("Error clearing context memory: {}", e.getMessage());
+            }
         }
 
         public void setUserMessage(UserMessage userMessage) {
