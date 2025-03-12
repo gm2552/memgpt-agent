@@ -41,16 +41,20 @@ public class MemGPTTools {
 
     private final int contextWindowSize;
 
+    private final float summaryThreshold;
+
     private final ObjectMapper objectMapper;
 
     public MemGPTTools(ObjectMapper mapper, AgentLoader agentLoader, AgentManager agentManager, ChatClient.Builder chatClientBuilder,
-                       @Value("${memgpt.agent.contextWindowsSize:16384}") int contextWindowSize) {
+                       @Value("${memgpt.agent.contextWindowsSize:16384}") int contextWindowSize,
+                       @Value("${memgpt.agent.contextWindowsSummaryThreshold:0.75}") float summaryThreshold) {
 
         this.objectMapper = mapper;
         this.agentLoader = agentLoader;
         this.agentManager = agentManager;
         this.chatClientBuilder = chatClientBuilder;
         this.contextWindowSize = contextWindowSize;
+        this.summaryThreshold = summaryThreshold;
     }
 
     @Tool(name="chat", description="Executes a continued chat given a user provided prompt and the system " +
@@ -141,7 +145,7 @@ public class MemGPTTools {
         if (agent.isEmpty()) {
 
             AgentCreate agentCreate = new AgentCreate(agentName, "", "",
-                    List.of(), contextWindowSize, List.of(), Map.of());
+                    List.of(), contextWindowSize, summaryThreshold, List.of(), Map.of());
 
             // need to create a new agent/session
             agentManager.createAgent(agentCreate);

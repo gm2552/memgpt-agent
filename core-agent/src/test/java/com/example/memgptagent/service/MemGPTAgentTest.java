@@ -33,7 +33,7 @@ public class MemGPTAgentTest extends BaseTest {
         BlockCreate personaBlock = new BlockCreate("personal", "Personal",5000, Map.of());
 
         AgentCreate agentCreate = new AgentCreate("Test", "Test Agent", "",
-                toolIds, 16384, List.of(humanBlock, personaBlock), Map.of());
+                toolIds, 16384, .75f, List.of(humanBlock, personaBlock), Map.of());
 
         AgentState agentState = agentManager.createAgent(agentCreate);
 

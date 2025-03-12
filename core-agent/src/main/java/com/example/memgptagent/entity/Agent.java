@@ -52,6 +52,9 @@ public class Agent extends VersionedEntity{
     @Column(nullable = false, name = "context_window")
     private int contextWindow;
 
+    @Column(nullable = false, name = "summary_threshold")
+    private float summaryThreshold;
+
     @Column(nullable = false, name = "metadata_labels")
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> metadataLabels;
@@ -135,5 +138,13 @@ public class Agent extends VersionedEntity{
 
     public void setMetadataLabels(Map<String, Object> metadataLabels) {
         this.metadataLabels = metadataLabels;
+    }
+
+    public float getSummaryThreshold() {
+        return summaryThreshold;
+    }
+
+    public void setSummaryThreshold(float summaryThreshold) {
+        this.summaryThreshold = summaryThreshold;
     }
 }

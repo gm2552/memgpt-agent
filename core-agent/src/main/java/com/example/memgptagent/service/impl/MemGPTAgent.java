@@ -44,8 +44,6 @@ public class MemGPTAgent implements MutableAgent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MemGPTAgent.class);
 
-    private static final float DEFAULT_MEMORY_THRESHOLD = .75f;
-
     private AgentState agentState;
 
     private final ChatClient chatClient;
@@ -56,8 +54,6 @@ public class MemGPTAgent implements MutableAgent {
 
     private String finalUserMessage;
 
-    private float memoryThreshold;
-
     public MemGPTAgent(AgentState agentState, AgentManager agentManager, ChatClient chatClient,
                        ObjectMapper objectMapper) {
 
@@ -66,7 +62,6 @@ public class MemGPTAgent implements MutableAgent {
         this.agentManager = agentManager;
         this.objectMapper = objectMapper;
         this.finalUserMessage = "";
-        this.memoryThreshold = DEFAULT_MEMORY_THRESHOLD;
     }
 
     @Override
@@ -200,7 +195,7 @@ public class MemGPTAgent implements MutableAgent {
 
         LOGGER.info("Successfully completed chat transaction.  Current context size for agent {}: {}", agentState.name(), usage.promptTokens());
 
-        if (usage.promptTokens() >  memoryThreshold * agentState.contextWindowSize())
+        if (usage.promptTokens() >  agentState.summaryThreshold() * agentState.contextWindowSize())
             summarizeMessages();
 
         if (operation == InnerOperation.COMPLETION)

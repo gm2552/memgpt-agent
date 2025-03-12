@@ -44,6 +44,8 @@ import java.util.stream.StreamSupport;
 @Service
 public class DefaultAgentManagerImpl implements AgentManager {
 
+    private static final float DEFAULT_MEMORY_THRESHOLD = .75f;
+
     private final AgentRepository agentRepository;
 
     private final BlockRepository blockRepository;
@@ -102,6 +104,7 @@ public class DefaultAgentManagerImpl implements AgentManager {
         newAgent.setContextWindow(agentCreate.contextWindowSize());
         newAgent.setMessageIds(List.of());
         newAgent.setToolIds(toolIds);
+        newAgent.setSummaryThreshold(agentCreate.summaryThreshold() > 0.0f ? agentCreate.summaryThreshold() : DEFAULT_MEMORY_THRESHOLD);
 
         UUID savedAgentId = agentRepository.save(newAgent).getId();
 
@@ -285,6 +288,7 @@ public class DefaultAgentManagerImpl implements AgentManager {
         return zippedMono.map(tuple -> {
             return new AgentState(tuple.getT1().getId(), tuple.getT1().getAgentName(), tuple.getT1().getDescription(),
                     tuple.getT1().getSystemPrompt(), tuple.getT1().getMessageIds(), tuple.getT3(), tuple.getT1().getContextWindow(),
+                    tuple.getT1().getSummaryThreshold(),
                     tuple.getT2(), tuple.getT1().getMetadataLabels());
         }).block();
     }

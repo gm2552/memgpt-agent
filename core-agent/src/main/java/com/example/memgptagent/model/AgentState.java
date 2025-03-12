@@ -6,5 +6,6 @@ import java.util.UUID;
 
 public record AgentState(UUID id, String name, String description, String systemPrompt,
                          List<UUID> messageIds, List<Tool> tools, int contextWindowSize,
+                         float summaryThreshold,
                          Memory memory, Map<String, Object> metadata) {
 }

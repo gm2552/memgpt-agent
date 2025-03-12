@@ -39,7 +39,7 @@ public class AgentApiController {
     private AgentState createNewAgent(AgentCreateRequest agentCreateRequest) {
 
         AgentCreate agentCreate = new AgentCreate(agentCreateRequest.agentName, "", "",
-                List.of(), agentCreateRequest.contextWindowSize, List.of(), Map.of());
+                List.of(), agentCreateRequest.contextWindowSize, .75f, List.of(), Map.of());
 
         return agentManager.createAgent(agentCreate);
     }

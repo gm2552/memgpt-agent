@@ -11,6 +11,7 @@ CREATE
               tool_ids json NOT NULL,
               system_prompt VARCHAR(50000) NOT NULL,
               context_window INTEGER NOT NULL,
+              summary_threshold DECFLOAT NOT NULL,
               metadata_labels json
 );
 
