@@ -35,6 +35,9 @@ public class Tool {
     @Column(name = "return_character_limit")
     private Integer returnCharacterLimit;
 
+    @Column(name = "core")
+    private boolean core;
+
     @CreationTimestamp
     @Column(updatable = false, name = "create_dt_time")
     private LocalDateTime createdAt;
@@ -105,5 +108,13 @@ public class Tool {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public boolean isCore() {
+        return core;
+    }
+
+    public void setCore(boolean core) {
+        this.core = core;
     }
 }

@@ -55,6 +55,7 @@ CREATE
              fq_class_name VARCHAR(256) NOT NULL,
              fq_input_class_name VARCHAR(256),
              return_character_limit INTEGER,
+             core BOOLEAN NOT NULL,
              create_dt_time TIMESTAMP WITH TIME ZONE NOT NULL,
              update_dt_time TIMESTAMP WITH TIME ZONE NOT NULL
 );

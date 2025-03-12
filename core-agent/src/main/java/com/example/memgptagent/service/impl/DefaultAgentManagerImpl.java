@@ -11,8 +11,8 @@ import com.example.memgptagent.model.Tool;
 import com.example.memgptagent.repository.AgentRepository;
 import com.example.memgptagent.repository.BlockRepository;
 import com.example.memgptagent.repository.MessageRepository;
-import com.example.memgptagent.repository.ToolRepository;
 import com.example.memgptagent.service.AgentManager;
+import com.example.memgptagent.service.ToolManager;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
@@ -50,18 +50,18 @@ public class DefaultAgentManagerImpl implements AgentManager {
 
     private final BlockRepository blockRepository;
 
-    private final ToolRepository toolRepository;
+    private final ToolManager toolManager;
 
     private final MessageRepository messageRepository;
 
     private final VectorStore vectorStore;
 
     public DefaultAgentManagerImpl(AgentRepository agentRepository, BlockRepository blockRepository,
-                                   ToolRepository toolRepository, MessageRepository messageRepository,
+                                   ToolManager toolManager, MessageRepository messageRepository,
                                    ObjectProvider<VectorStore> vectorStore) {
         this.agentRepository = agentRepository;
         this.blockRepository = blockRepository;
-        this.toolRepository = toolRepository;
+        this.toolManager = toolManager;
         this.messageRepository = messageRepository;
         this.vectorStore = vectorStore.getIfAvailable();
     }
@@ -84,8 +84,8 @@ public class DefaultAgentManagerImpl implements AgentManager {
     @Transactional(propagation = Propagation.REQUIRED)
     public AgentState createAgent(AgentCreate agentCreate) {
 
-        // get stock tools
-        List<UUID> toolIds = agentCreate.toolIds().isEmpty() ? Streamable.of(toolRepository.findAll()).stream().map(tool -> tool.getId()).collect(Collectors.toUnmodifiableList()) :
+        // get core tools
+        List<UUID> toolIds = agentCreate.toolIds().isEmpty() ? Streamable.of(toolManager.getCoreTools()).stream().map(tool -> tool.id()).collect(Collectors.toUnmodifiableList()) :
                 agentCreate.toolIds();
 
         // create the human and personal Core memory blocks
@@ -309,26 +309,6 @@ public class DefaultAgentManagerImpl implements AgentManager {
 
     private Mono<List<Tool>> getAgentStateTools(List<UUID> toolIds) {
 
-        return Flux.fromIterable(toolRepository.findAllById(toolIds))
-                .map(tool -> {
-
-                    Class<?> toolClass = null;
-                    Class<?> inputTypeClass = null;
-
-                    try {
-                        toolClass = Class.forName(tool.getFqClassName());
-                        inputTypeClass = StringUtils.hasText(tool.getFqInputClassName()) ?
-                                Class.forName(tool.getFqInputClassName()) : null;
-                    }
-                    catch (Exception e) {
-                        // TODO: Log warning
-                        e.printStackTrace();
-                    }
-
-
-                    return new Tool(tool.getId(), tool.getName(), tool.getDescription(), toolClass,
-                            inputTypeClass, tool.getReturnCharacterLimit());
-
-                }).collectList();
+        return Flux.fromIterable(toolManager.getToolsByIds(toolIds)).collectList();
     }
 }

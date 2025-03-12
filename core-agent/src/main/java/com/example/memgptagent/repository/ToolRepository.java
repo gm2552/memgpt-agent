@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface ToolRepository extends CrudRepository<Tool, UUID> {
 
+    List<Tool> findByCore(boolean tag);
+
 }
