@@ -1,5 +1,5 @@
 spring:
 
-  sql.init.mode: ALWAYS
-  sql.init.platform: h2
-#  sql.init.continue-on-error: true
+  flyway:
+    locations: db/migrations/{vendor}
+
