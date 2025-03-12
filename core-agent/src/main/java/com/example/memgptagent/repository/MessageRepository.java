@@ -17,4 +17,5 @@ public interface MessageRepository extends CrudRepository<Message, UUID>,
 
     long  countByAgentIdAndRoleAndTextContainingIgnoreCase(UUID agentId, String role, String text);
 
+    void deleteByAgentId(UUID agentId);
 }

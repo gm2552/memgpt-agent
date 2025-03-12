@@ -137,6 +137,13 @@ public class MemGPTTools {
 
     }
 
+    @Tool(name="clear", description="Clears the contents of an agent context window and memory. The context is specified by the agent name")
+    public void chat(@ToolParam(description="The unique name of the agent that maintains context and history") String agentName) {
+
+        agentManager.clearAgentStateByName(agentName);
+
+    }
+
     private Agent getAgent(String agentName) {
 
         // load the agent and see check if the agent exists

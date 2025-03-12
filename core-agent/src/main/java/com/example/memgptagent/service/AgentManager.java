@@ -14,6 +14,8 @@ public interface AgentManager {
 
     Optional<AgentState> getAgentStateByName(String name);
 
+    void clearAgentStateByName(String name);
+
     AgentState createAgent(AgentCreate agentCreate);
 
     List<Message> getMessagesByIds(List<UUID> ids);

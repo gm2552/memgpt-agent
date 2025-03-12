@@ -56,6 +56,14 @@ public class DefaultToolManager implements ToolManager {
                 .map(DefaultToolManager::toModelTool).collect(Collectors.toUnmodifiableList());
     }
 
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void deleteToolsByIds(List<UUID> ids) {
+
+        toolRepository.deleteAllById(ids);
+
+    }
+
     private static Tool toModelTool(com.example.memgptagent.entity.Tool tool) {
 
         Class<?> toolClass = null;

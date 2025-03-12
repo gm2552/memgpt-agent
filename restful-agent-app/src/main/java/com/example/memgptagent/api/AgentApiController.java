@@ -5,6 +5,8 @@ import com.example.memgptagent.model.AgentState;
 import com.example.memgptagent.repository.ToolRepository;
 import com.example.memgptagent.service.AgentManager;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,6 +36,14 @@ public class AgentApiController {
         }
 
         return ResponseEntity.ok(createNewAgent(agentCreateRequest));
+    }
+
+    @DeleteMapping("agent/{agentName}/context")
+    public ResponseEntity<Void> clearAgentContextMemory(@PathVariable("agentName")String  agentName) {
+
+        agentManager.clearAgentStateByName(agentName);
+
+        return ResponseEntity.ok().build();
     }
 
     private AgentState createNewAgent(AgentCreateRequest agentCreateRequest) {

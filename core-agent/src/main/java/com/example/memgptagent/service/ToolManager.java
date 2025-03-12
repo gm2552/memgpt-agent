@@ -15,4 +15,6 @@ public interface ToolManager {
 
     List<Tool> getToolsByIds(List<UUID> ids);
 
+    void deleteToolsByIds(List<UUID> ids);
+
 }

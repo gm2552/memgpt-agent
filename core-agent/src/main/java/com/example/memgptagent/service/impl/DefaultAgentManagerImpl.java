@@ -82,6 +82,30 @@ public class DefaultAgentManagerImpl implements AgentManager {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
+    public void clearAgentStateByName(String name) {
+
+        getAgentStateByName(name).ifPresent(agent -> {
+
+            // clear all messages
+            messageRepository.deleteByAgentId(agent.id());
+
+            // clear memory state
+            agent.memory().blocks().values().forEach(block -> {
+                this.updateMemoryBlockValue(block.id(), "");
+            });
+
+            // TODO: Clear archival memory
+
+
+            // clear out the context message list
+            replaceContextWithNewMessages(agent.id(), List.of());
+
+        });
+
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED)
     public AgentState createAgent(AgentCreate agentCreate) {
 
         // get core tools
@@ -232,8 +256,8 @@ public class DefaultAgentManagerImpl implements AgentManager {
 
         }).collect(Collectors.toUnmodifiableList());
 
-        List<UUID> newIDs = StreamSupport
-                .stream(messageRepository.saveAll(newSaveMessages).spliterator(), false)
+        List<UUID> newIDs = newSaveMessages.isEmpty() ? List.of() :
+                 StreamSupport.stream(messageRepository.saveAll(newSaveMessages).spliterator(), false)
                 .map(msg -> msg.getId())
                 .toList();
 
