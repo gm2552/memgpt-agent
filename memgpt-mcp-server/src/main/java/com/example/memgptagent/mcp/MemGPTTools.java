@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -124,7 +125,9 @@ public class MemGPTTools {
                     // TODO Handle this better
                     return null;
                 }
-            }).collect(Collectors.toUnmodifiableList());
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toUnmodifiableList());
 
 
         if (StringUtils.hasText(agentName)) {

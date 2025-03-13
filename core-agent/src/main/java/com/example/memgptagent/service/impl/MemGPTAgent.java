@@ -26,6 +26,7 @@ import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.openai.api.OpenAiApi;
 import reactor.core.publisher.Flux;
 
+import javax.naming.OperationNotSupportedException;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -158,7 +160,7 @@ public class MemGPTAgent implements MutableAgent {
      */
     @Override
     public Flux<OpenAiApi.ChatCompletionChunk> streamChat(OpenAiApi.ChatCompletionRequest chatRequest) {
-        return null;
+        throw new RuntimeException(new OperationNotSupportedException("Streaming is not supported"));
     }
 
     private List<org.springframework.ai.chat.messages.Message> doInner(UserMessage chatRequest,
@@ -321,7 +323,6 @@ public class MemGPTAgent implements MutableAgent {
     private List<org.springframework.ai.chat.messages.Message> toSpringAIMessages(List<Message> contextMessages) {
 
         return contextMessages.stream()
-        //.filter(msg -> msg.role() == MessageType.USER || msg.role() == MessageType.SYSTEM)
         .map(msg -> switch (msg.role()) {
 
             case USER -> new UserMessage(msg.content());
@@ -402,9 +403,12 @@ public class MemGPTAgent implements MutableAgent {
 
             }
             catch (Exception e) {
+                LOGGER.warn("Could not create FunctionCallback for tool {}", tool.name(), e);
                 return null;
             }
-        }).toList();
+        })
+        .filter(Objects::nonNull)
+        .toList();
 
         return toolCallbacks.toArray(new FunctionCallback[0]);
 
