@@ -94,6 +94,13 @@ java -jar ./memgpt-mcp-server/build/libs/memgpt-mcp-server-0.0.1-SNAPSHOT.jar
 
 The server application will load and is ready for incoming transactions from the ChatBot application.
 
+#### Archival Memory
+
+MemGPT archival memory requires the use of a vector store and Embeddings model.  By default, archival memory
+is disabled, but you can activate it by enabling the `pgvector` Spring profile.  If you are using OpenAI as
+your embeddings provider and postgres as your database, no additional configuration should be required.  Other providers
+may require additional configuration which is beyond the scope of this README.
+
 ### ChatBot Application
 
 The ChatBot application can communicate with either the REST application or the MCP server application; by default

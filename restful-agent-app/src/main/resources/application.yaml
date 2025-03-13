@@ -2,6 +2,9 @@ spring:
   application:
     name: restful-agent-app
 
+  autoconfigure: # By default, disable vector stores and archival memory (extra config is required).
+    exclude: org.springframework.ai.autoconfigure.vectorstore.pgvector.PgVectorStoreAutoConfiguration
+
   ai:
     openai:
       chat:
@@ -18,3 +21,17 @@ spring:
         speech:
           enabled: false
       api-key: ${OPENAI_API_KEY}
+
+---
+spring:
+
+  config.activate.on-profile: pgvector
+
+  autoconfigure: # Requires embeddings and postgress DB to be configured to work properly.
+    exclude:
+
+  ai:
+    openai:
+      chat:
+      embedding:
+        enabled: true  # Assumes using OpenAI.  Set to false if using a different Embeddings provider
