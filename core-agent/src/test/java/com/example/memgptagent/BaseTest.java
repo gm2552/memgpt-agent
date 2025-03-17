@@ -82,4 +82,8 @@ public class BaseTest {
         return agentId;
     }
 
+    protected com.example.memgptagent.service.Agent getAgent(UUID uuid) {
+        return agentLoader.loadAgent(uuid, chatClient).get();
+    }
+
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -135,7 +136,7 @@ public class MemGPTMessageChatMemoryAdvisor extends MessageChatMemoryAdvisor  {
 
                         // The returned content is a list of JSON objects.  Each object represents
                         // an individual message which is in the form a Map<String, Object>
-                        ObjectMapper objectMapper = new ObjectMapper();
+                        ObjectMapper objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                         List<Object> retObjects = objectMapper.readValue(content, new TypeReference<List<Object>>(){});
 
                         return retObjects.stream().map(ob -> {

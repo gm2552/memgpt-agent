@@ -171,12 +171,12 @@ public class MemGPTAgent implements MutableAgent {
                 = toSpringAIMessages(agentManager.getMessagesByIds(agentState.messageIds()));
 
         if (operation == InnerOperation.CONTEXT_RETRIEVAL) {
-            // just get the context messages
+            // if there is not a chat request, just get the context messages
             // we aren't trying to update memory
             // with any information from the request
             if (chatRequest == null)
                 return contextMessages;
-            // add the context retrieval system message
+            // otherwise add the context retrieval system message
             else
                 contextMessages.addFirst(buildContextRetrievalSystemMessage());
         }
@@ -270,22 +270,39 @@ public class MemGPTAgent implements MutableAgent {
 
                 org.springframework.ai.chat.messages.Message lastMsg = toolExecutionResult.conversationHistory().getLast();
 
-                // don't update the messages with the user messages if it's not a completion... this should be done on an append operation
+                // don't update the messages with the user messages if it's not a completion...
+                // this should be done on an append operation
                 if (operation == InnerOperation.COMPLETION)
                     agentManager.saveNewMessages(this.getId(), toStorageMessage(List.of(lastMsg)));
+
 
                 if (lastMsg.getMessageType() == MessageType.TOOL){
                     ToolResponseMessage toolMessage = (ToolResponseMessage) lastMsg;
 
+                    boolean saveContextRetrivalMessages = false;
+
                     for (ToolResponseMessage.ToolResponse resp :  toolMessage.getResponses())
                     {
+
+                        // if the tool is an archival and conversation retrieval ANDs this is a context
+                        // retrival request, then we still need to add the tool response to the message list
+                        if (operation == InnerOperation.CONTEXT_RETRIEVAL & (
+                                resp.name().equalsIgnoreCase("archival_memory_search") ||
+                                resp.name().equalsIgnoreCase("conversation_search"))) {
+                            saveContextRetrivalMessages = true;
+
+                        }
 
                         // TODO: use a configured list of tool names to kick out of the loop
                         // check if the tool kicks us out of the loop
                         if (resp.name().equalsIgnoreCase("send_message") || resp.name().equalsIgnoreCase("retrieval_done")){
                             runLoop = false;
-                            break;
                         }
+                    }
+
+                    if (saveContextRetrivalMessages) {
+                        agentManager.saveNewMessages(this.getId(), toStorageMessage(List.of(chatResp.getResult().getOutput())));
+                        agentManager.saveNewMessages(this.getId(), toStorageMessage(List.of(lastMsg)));
                     }
                 }
             }
@@ -335,8 +352,20 @@ public class MemGPTAgent implements MutableAgent {
 
     private ToolResponseMessage toSpringToolResponseMessage(Message contextMessage) {
 
-        List<ToolResponseMessage.ToolResponse> resps =
-            Arrays.stream(contextMessage.toolCallId().split(",")).map(id -> new ToolResponseMessage.ToolResponse(id, "", "")).toList();
+        List<ToolResponseMessage.ToolResponse> resps = new ArrayList<>();
+
+        String[] ids = contextMessage.toolCallId().split(",");
+        String[] resp = contextMessage.content().split("#TOOL_REP#");
+
+        if (ids.length != resp.length){
+            LOGGER.warn("Tool response consistency issue.  Returning empty response test for tools");
+            for (int i = 0; i < ids.length; i++)
+                resps.add(new ToolResponseMessage.ToolResponse(ids[i], "", ""));
+        }
+        else {
+            for (int i = 0; i < ids.length; i++)
+                resps.add(new ToolResponseMessage.ToolResponse(ids[i], "", resp[i]));
+        }
 
         return new ToolResponseMessage(resps);
 
@@ -364,16 +393,24 @@ public class MemGPTAgent implements MutableAgent {
 
     private Message toolMessageToStorageMessage(ToolResponseMessage toolMessage) {
 
-        StringBuilder builder = new StringBuilder();
+        StringBuilder idBuilder = new StringBuilder();
+        StringBuilder toolTextBuilder = new StringBuilder();
         Iterator<ToolResponseMessage.ToolResponse> iter = toolMessage.getResponses().iterator();
         while (iter.hasNext()) {
-            builder.append(iter.next().id());
-            if (iter.hasNext())
-                builder.append(",");
+            ToolResponseMessage.ToolResponse toolResponse = iter.next();
+            toolTextBuilder.append(toolResponse.responseData());
+            idBuilder.append(toolResponse.id());
+            if (iter.hasNext()) {
+                idBuilder.append(",");
+                // TODO: Find better way to combine tool id and response text for
+                // potential parallel tool calls.
+                // Using the delimiter below is probably not the best idea
+                toolTextBuilder.append("#TOOL_REP#");
+            }
         }
 
 
-        return new Message(null, MessageType.TOOL, toolMessage.getText(), List.of(), builder.toString(),"");
+        return new Message(null, MessageType.TOOL, toolTextBuilder.toString(), List.of(), idBuilder.toString(),"");
     }
 
     private FunctionCallback[] getFunctionCallbacks() {
