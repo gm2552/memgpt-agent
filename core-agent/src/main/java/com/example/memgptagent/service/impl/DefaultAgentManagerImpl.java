@@ -309,6 +309,23 @@ public class DefaultAgentManagerImpl implements AgentManager {
 
     }
 
+    @Override
+    public Optional<UUID> getAgentIdByName(String agentName) {
+        return agentRepository.findByAgentName(agentName).map(agent -> Optional.of(agent.getId()))
+                .orElse(Optional.empty());
+    }
+
+    @Override
+    public Optional<Integer> getAgentContextWindowMessageCount(UUID agentId) {
+        return agentRepository.findById(agentId).map(agent -> Optional.of(agent.getMessageIds().size()))
+                .orElse(Optional.empty());
+    }
+
+    @Override
+    public Optional<Long> getAgentTotalMessageCount(UUID agentId) {
+        return Optional.empty();
+    }
+
     private AgentState retrieveAgentState(Agent agent) {
         Mono<Tuple3<Agent, Memory, List<Tool>>> zippedMono =
                 Mono.zip(Mono.just(agent), getAgentStateMemory(agent.getId()), getAgentStateTools(agent.getToolIds()));

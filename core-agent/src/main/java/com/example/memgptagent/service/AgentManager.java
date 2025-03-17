@@ -36,4 +36,10 @@ public interface AgentManager {
 
     List<String> getMatchingUserPassages(UUID agentId, String queryText);
 
+    Optional<UUID> getAgentIdByName(String agentName);
+
+    Optional<Integer> getAgentContextWindowMessageCount(UUID agentId);
+
+    Optional<Long> getAgentTotalMessageCount(UUID agentId);
+
 }
