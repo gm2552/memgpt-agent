@@ -287,7 +287,7 @@ public class DefaultAgentManagerImpl implements AgentManager {
         if (vectorStore != null) {
 
             // annotate with the agent id
-            List<Document> docs = new TokenTextSplitter().split(new Document(passage, Map.of("agentId", agentId)));
+            List<Document> docs = new TokenTextSplitter().split(new Document(passage, Map.of("agentId", agentId.toString())));
 
             // persist to the vector store
             vectorStore.add(docs);
@@ -299,9 +299,10 @@ public class DefaultAgentManagerImpl implements AgentManager {
     public List<String> getMatchingUserPassages(UUID agentId, String queryText) {
 
         // make sure the returned documents are only for the requested agent id
-        Filter.Expression metaExpression = new FilterExpressionBuilder().eq("agentId", agentId).build();
+        Filter.Expression metaExpression = new FilterExpressionBuilder().eq("agentId", agentId.toString()).build();
 
-        SearchRequest searchRequest = SearchRequest.builder().query(queryText).topK(5).filterExpression(metaExpression).build();
+        SearchRequest searchRequest = SearchRequest.builder().query(queryText).topK(5)
+               .filterExpression(metaExpression).build();
 
         // simple vector store query
         return vectorStore.similaritySearch(searchRequest).stream().map(doc -> doc.getText()).toList();
