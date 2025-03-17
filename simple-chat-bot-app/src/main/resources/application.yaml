@@ -2,7 +2,7 @@ spring.application.name: trivial-chat-bot
 
 spring.main.log-startup-info: false
 
-spring.profiles.active: advisor
+spring.profiles.active: rest
 
 spring:
   application:
@@ -27,7 +27,7 @@ spring:
 ---
 spring:
 
-  config.activate.on-profile: rest
+  config.activate.on-profile: rest, restadvisor
 
   ai:
     mcp:
@@ -38,7 +38,7 @@ spring:
 
 spring:
 
-  config.activate.on-profile: mcp, advisor
+  config.activate.on-profile: mcp, mcpadvisor
 
   ai:
     mcp:

@@ -2,20 +2,19 @@ package com.java.example.chatbot;
 
 
 
+import com.java.example.chatbot.advisors.MemGPTChatMemory;
 import com.java.example.chatbot.advisors.MemGPTMessageChatMemoryAdvisor;
-import io.modelcontextprotocol.client.McpSyncClient;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
-import java.util.List;
 
 @Component
-@Profile("advisor")
+@Profile("mcpadvisor || restadvisor")
 public class ChatMemoryAdvisorEngine implements ChatEngine {
 
 
-    private final McpSyncClient client;
+    private final MemGPTChatMemory chatMemory;
 
     private final ChatClient.Builder chatClientBuilder;
 
@@ -23,8 +22,8 @@ public class ChatMemoryAdvisorEngine implements ChatEngine {
 
     private String userId;
 
-    public ChatMemoryAdvisorEngine(List<McpSyncClient> mcpSyncClients, ChatClient.Builder chatClientBuilder) {
-        this.client = mcpSyncClients.getFirst();
+    public ChatMemoryAdvisorEngine(MemGPTChatMemory chatMemory, ChatClient.Builder chatClientBuilder) {
+        this.chatMemory = chatMemory;
         this.chatClientBuilder = chatClientBuilder;
     }
 
@@ -34,7 +33,7 @@ public class ChatMemoryAdvisorEngine implements ChatEngine {
         this.userId = userId;
 
         chatClient = chatClientBuilder
-                .defaultAdvisors(new MemGPTMessageChatMemoryAdvisor(client, userId))
+                .defaultAdvisors(new MemGPTMessageChatMemoryAdvisor(chatMemory, userId))
                 .build();
 
         System.out.println("Welcome.  Let's start a conversation.");

@@ -123,9 +123,10 @@ export OPENAI_API_KEY=your-api-key
 Edit the `simple-chat-bot-app\src\main\resource\application.yaml` file and update the `spring.profiles.active` setting with the following value
 depending on the targeted server application.
 
-- **rest:** Generates chat completions over a REST API with the MemGPT server.
+- **rest (default):** Generates chat completions over a REST API with the MemGPT server.
 - **mcp:** Generates chat completions over an MCP API with the MemGPT server.
-- **advisor:** Generates chat completions by communicating directly with the LLM and using the MemGPT server to only manage memory over an MCP API.
+- **restadvisor:** Generates chat completions by communicating directly with the LLM and using the MemGPT server to only manage memory over a RESTful API.
+- **mdcadvisor:** Generates chat completions by communicating directly with the LLM and using the MemGPT server to only manage memory over an MCP API.
 
 
 3. Build the application 
