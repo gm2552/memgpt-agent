@@ -4,6 +4,8 @@ import com.example.memgptagent.model.AgentCreate;
 import com.example.memgptagent.model.AgentState;
 import com.example.memgptagent.repository.ToolRepository;
 import com.example.memgptagent.service.AgentManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +20,8 @@ import java.util.Map;
 @RestController
 public class AgentApiController {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AgentApiController.class);
+
     private final AgentManager agentManager;
 
     private final ToolRepository toolRepository;
@@ -31,7 +35,10 @@ public class AgentApiController {
     @PostMapping("agent")
     public ResponseEntity<AgentState> createAgent(@RequestBody AgentCreateRequest agentCreateRequest) {
 
+        LOGGER.info("Requesting creation of agent {}", agentCreateRequest.agentName);
+
         if (agentManager.getAgentStateByName(agentCreateRequest.agentName).isPresent()) {
+            LOGGER.warn("Agent {} already exists.", agentCreateRequest.agentName);
             return ResponseEntity.status(409).build();
         }
 
@@ -40,6 +47,8 @@ public class AgentApiController {
 
     @DeleteMapping("agent/{agentName}/context")
     public ResponseEntity<Void> clearAgentContextMemory(@PathVariable("agentName")String  agentName) {
+
+        LOGGER.info("Clearing memory for agent {}", agentName);
 
         agentManager.clearAgentStateByName(agentName);
 

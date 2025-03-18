@@ -92,11 +92,20 @@ public class MemGPTAgent implements MutableAgent {
     @Override
     public List<org.springframework.ai.chat.messages.Message> recallContext(UserMessage request) {
 
+        LOGGER.debug("Requesting context recall for agent {}.  Current agent state:\n {}", agentState.name(), agentState);
+
         List<org.springframework.ai.chat.messages.Message> retMessages =
                 new ArrayList<>(doInner(request, InnerOperation.CONTEXT_RETRIEVAL));
 
         // need to build a short system message with the core memory contents
         retMessages.addFirst(buildContextRetrievalMemoryMessage());
+
+        if (LOGGER.isDebugEnabled()) {
+            try {
+                LOGGER.debug("Content of recalled context for agent {}\n {}", agentState.name(), objectMapper.writeValueAsString(retMessages));
+            }
+            catch (JsonProcessingException e) {}
+        }
 
         return retMessages;
     }
@@ -104,7 +113,16 @@ public class MemGPTAgent implements MutableAgent {
     @Override
     public void appendContext(List<org.springframework.ai.chat.messages.Message> messages) {
 
+        LOGGER.debug("Requesting context append for agent {}.", agentState.name());
+
         try {
+
+            if (LOGGER.isDebugEnabled()) {
+                try {
+                    LOGGER.debug("Content of appended context  context for agent {}\n {}", agentState.name(), objectMapper.writeValueAsString(messages));
+                }
+                catch (JsonProcessingException e) {}
+            }
 
             var convertedMessages = toStorageMessage(messages);
 
@@ -139,8 +157,16 @@ public class MemGPTAgent implements MutableAgent {
 
             org.springframework.ai.chat.messages.Message message = messages.getLast();
 
-            if (message instanceof AssistantMessage)
+            if (message instanceof AssistantMessage) {
+                if (LOGGER.isDebugEnabled()) {
+                    try {
+                        LOGGER.debug("Content of chat created response for agent {}\n {}", agentState.name(), objectMapper.writeValueAsString(message));
+                    } catch (JsonProcessingException e) {}
+                }
+
                 return (AssistantMessage)message;
+            }
+
 
             // error
             return new AssistantMessage("Chat Error: No valid response message was created");
