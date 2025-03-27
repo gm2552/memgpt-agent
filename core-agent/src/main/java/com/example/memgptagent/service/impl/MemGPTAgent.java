@@ -1,9 +1,11 @@
 package com.example.memgptagent.service.impl;
 
 import com.example.memgptagent.model.AgentState;
+import com.example.memgptagent.model.Block;
 import com.example.memgptagent.model.Message;
 import com.example.memgptagent.service.Agent;
 import com.example.memgptagent.service.AgentManager;
+import com.example.memgptagent.service.AgentMetrics;
 import com.example.memgptagent.service.MutableAgent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -55,14 +57,17 @@ public class MemGPTAgent implements MutableAgent {
 
     private String finalUserMessage;
 
+    private AgentMetrics agentMetrics;
+
     public MemGPTAgent(AgentState agentState, AgentManager agentManager, ChatClient chatClient,
-                       ObjectMapper objectMapper) {
+                       ObjectMapper objectMapper, AgentMetrics agentMetrics) {
 
         this.agentState = agentState;
         this.chatClient = chatClient;
         this.agentManager = agentManager;
         this.objectMapper = objectMapper;
         this.finalUserMessage = "";
+        this.agentMetrics = agentMetrics;
     }
 
     @Override
@@ -221,6 +226,10 @@ public class MemGPTAgent implements MutableAgent {
         refreshState();
 
         LOGGER.info("Successfully completed chat transaction.  Current context size for agent {}: {}", agentState.name(), usage.promptTokens());
+        agentMetrics.setContextSize(agentState.name(), usage.promptTokens());
+        Block humanBlock = agentState.memory().blocks().get("human");
+        Block personaBlock = agentState.memory().blocks().get("persona");
+        agentMetrics.setCoreMemory(agentState.name(), humanBlock.value(), personaBlock.value());
 
         if (usage.promptTokens() >  agentState.summaryThreshold() * agentState.contextWindowSize())
             summarizeMessages();
